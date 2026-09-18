@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
 import { validateEnvironment } from './configuration';
 import { buildDatabaseOptions } from './database/database.config';
 import { HealthModule } from './health/health.module';
@@ -17,6 +18,7 @@ import { HealthModule } from './health/health.module';
       useFactory: buildDatabaseOptions,
     }),
     HealthModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
