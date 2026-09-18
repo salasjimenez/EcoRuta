@@ -1,0 +1,35 @@
+import 'reflect-metadata';
+import { DataSource } from 'typeorm';
+import { InitialDatabaseSetup1758168000000 } from './migrations/1758168000000-initial-database-setup';
+
+function required(name: string): string {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`Falta la variable de entorno ${name}`);
+  }
+
+  return value;
+}
+
+function databasePort(): number {
+  const port = Number(required('DB_PORT'));
+
+  if (!Number.isInteger(port) || port <= 0) {
+    throw new Error('DB_PORT debe ser un puerto numerico valido');
+  }
+
+  return port;
+}
+
+export default new DataSource({
+  type: 'postgres',
+  host: required('DB_HOST'),
+  port: databasePort(),
+  database: required('DB_NAME'),
+  username: required('DB_USER'),
+  password: required('DB_PASSWORD'),
+  synchronize: false,
+  migrationsTableName: 'typeorm_migrations',
+  migrations: [InitialDatabaseSetup1758168000000],
+});
