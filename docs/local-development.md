@@ -35,20 +35,26 @@ npm run start:dev
 
 La API queda disponible en `http://localhost:3000/api`.
 
-## v5 - Vehículos
+## v6 - Rutas planificadas
 
-Los endpoints de vehículos requieren un JWT válido de una cuenta `transporter`.
+Los endpoints de rutas requieren un JWT válido de una cuenta `transporter`.
 
-- `POST /api/vehicles` crea un vehículo.
-- `GET /api/vehicles` lista solo los vehículos del transportista autenticado.
-- `GET /api/vehicles/:id` obtiene un vehículo propio.
-- `PATCH /api/vehicles/:id` actualiza un vehículo propio.
-- `DELETE /api/vehicles/:id` elimina un vehículo propio.
+- `POST /api/routes` publica una ruta usando un vehículo propio disponible.
+- `GET /api/routes` lista las rutas del transportista autenticado.
+- `GET /api/routes/:id` obtiene una ruta propia.
+- `PATCH /api/routes/:id` actualiza una ruta propia.
+- `DELETE /api/routes/:id` elimina una ruta planificada o cancelada.
 
-Tipos de vehículo disponibles:
+Estados disponibles:
 
-`cargo_van`, `pickup`, `light_truck`, `medium_truck`, `heavy_truck`, `refrigerated_truck`.
+`planned`, `in_progress`, `completed`, `cancelled`.
 
-Tipos de carga disponibles:
+Transiciones permitidas:
 
-`general`, `food`, `perishable`, `refrigerated`, `fragile`, `textile`, `electronics`, `construction_materials`, `other`.
+- `planned` -> `in_progress` o `cancelled`
+- `in_progress` -> `completed` o `cancelled`
+- `completed` y `cancelled` son estados finales
+
+Una ruta necesita origen y destino con coordenadas, una salida, una llegada estimada posterior y una distancia estimada mayor a cero. Los datos del recorrido solo pueden modificarse mientras la ruta siga en estado `planned`.
+
+La v6 todavía no descuenta ni publica capacidad sobrante del vehículo; esa funcionalidad pertenece a v7.

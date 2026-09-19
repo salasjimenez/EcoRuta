@@ -6,9 +6,9 @@ La plataforma tendrá una app móvil para transportistas y usuarios, un panel we
 
 ## Estado actual
 
-**v5** incorpora vehículos para cuentas transportistas. Cada vehículo registra tipo, placa, capacidad máxima por peso y volumen, disponibilidad y categorías de carga admitidas.
+**v6** permite a los transportistas publicar y administrar rutas planificadas usando uno de sus vehículos. Cada ruta guarda origen, destino, coordenadas, horario estimado, distancia y estado operativo.
 
-El proyecto mantiene dos componentes diferenciadores para las siguientes versiones: matching basado en capacidad logística real y EcoProof para registrar el CO2 evitado por operaciones compartidas.
+La capacidad sobrante del viaje se incorpora en v7. El matching logístico y EcoProof se desarrollan en versiones posteriores.
 
 ## Configuración
 

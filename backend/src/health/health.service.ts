@@ -9,7 +9,7 @@ export class HealthService {
     return {
       status: 'ok',
       service: 'ecoruta-api',
-      version: 'v2',
+      version: 'v6',
       timestamp: new Date().toISOString(),
     };
   }

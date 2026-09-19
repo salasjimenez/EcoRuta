@@ -4,6 +4,7 @@ import { InitialDatabaseSetup1758168000000 } from './migrations/1758168000000-in
 import { CreateUsers1789700400000 } from './migrations/1789700400000-create-users';
 import { AddRolesAndProfiles1789714800000 } from './migrations/1789714800000-add-roles-and-profiles';
 import { CreateVehicles1789797600000 } from './migrations/1789797600000-create-vehicles';
+import { CreatePlannedRoutes1789884000000 } from './migrations/1789884000000-create-planned-routes';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -39,5 +40,6 @@ export default new DataSource({
     CreateUsers1789700400000,
     AddRolesAndProfiles1789714800000,
     CreateVehicles1789797600000,
+    CreatePlannedRoutes1789884000000,
   ],
 });
