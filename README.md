@@ -1,21 +1,15 @@
 # EcoRuta
 
-![EcoRuta](./assets/Logo_EcoRuta.png)
+EcoRuta conecta transportistas que ya tienen rutas planificadas con pequeñas empresas que necesitan mover carga. La idea es aprovechar capacidad que normalmente viajaría vacía y reducir viajes adicionales.
 
-EcoRuta conecta transportistas que ya tienen una ruta planificada con pequeñas empresas que necesitan mover carga. La idea es aprovechar espacio disponible en viajes que de todos modos se realizarían y medir el CO2 evitado por cada operación compartida.
-
-El proyecto tendrá dos piezas diferenciadoras: matching por capacidad logística real y EcoProof, una evidencia reproducible del ahorro de emisiones.
+La plataforma tendrá una app móvil para transportistas y usuarios, un panel web para empresas y administración, y una API propia conectada a PostgreSQL.
 
 ## Estado actual
 
-**v4** diferencia las cuentas de transportistas, empresas y administradores. Cada transportista o empresa tiene un perfil propio y las operaciones de perfil están protegidas por JWT y rol.
+**v5** incorpora vehículos para cuentas transportistas. Cada vehículo registra tipo, placa, capacidad máxima por peso y volumen, disponibilidad y categorías de carga admitidas.
 
-Los administradores no pueden crearse desde el registro público.
+El proyecto mantiene dos componentes diferenciadores para las siguientes versiones: matching basado en capacidad logística real y EcoProof para registrar el CO2 evitado por operaciones compartidas.
 
-## Puesta en marcha
+## Configuración
 
-Requiere Node.js 24 LTS, npm y Docker con Compose. El repositorio no incluye ningún archivo `.env`; si decides usar uno, debes crearlo manualmente.
-
-Variables necesarias: `PORT`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` y, opcionalmente, `JWT_EXPIRES_SECONDS`.
-
-Los comandos de desarrollo y ejemplos de v4 están en `docs/local-development.md`.
+EcoRuta no incluye archivos `.env`. Las variables necesarias se definen manualmente en la terminal. Consulta `docs/local-development.md` para el entorno local.
