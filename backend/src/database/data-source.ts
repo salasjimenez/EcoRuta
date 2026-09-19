@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { InitialDatabaseSetup1758168000000 } from './migrations/1758168000000-initial-database-setup';
 import { CreateUsers1789700400000 } from './migrations/1789700400000-create-users';
+import { AddRolesAndProfiles1789714800000 } from './migrations/1789714800000-add-roles-and-profiles';
 
 function required(name: string): string {
   const value = process.env[name];
@@ -32,5 +33,9 @@ export default new DataSource({
   password: required('DB_PASSWORD'),
   synchronize: false,
   migrationsTableName: 'typeorm_migrations',
-  migrations: [InitialDatabaseSetup1758168000000, CreateUsers1789700400000],
+  migrations: [
+    InitialDatabaseSetup1758168000000,
+    CreateUsers1789700400000,
+    AddRolesAndProfiles1789714800000,
+  ],
 });

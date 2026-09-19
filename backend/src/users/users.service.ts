@@ -1,7 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AdminProfile } from '../profiles/admin-profile.entity';
+import { CompanyProfile } from '../profiles/company-profile.entity';
+import { TransporterProfile } from '../profiles/transporter-profile.entity';
 import { User } from './user.entity';
+import { UserRole } from './user-role.enum';
+
+type CreateUserInput = Pick<
+  User,
+  'fullName' | 'email' | 'passwordHash' | 'role'
+>;
 
 @Injectable()
 export class UsersService {
@@ -28,8 +37,27 @@ export class UsersService {
     });
   }
 
-  create(input: Pick<User, 'fullName' | 'email' | 'passwordHash'>) {
-    const user = this.usersRepository.create(input);
-    return this.usersRepository.save(user);
+  create(input: CreateUserInput): Promise<User> {
+    return this.usersRepository.manager.transaction(async (manager) => {
+      const userRepository = manager.getRepository(User);
+      const user = await userRepository.save(userRepository.create(input));
+
+      if (user.role === UserRole.TRANSPORTER) {
+        const profiles = manager.getRepository(TransporterProfile);
+        await profiles.save(profiles.create({ userId: user.id }));
+      }
+
+      if (user.role === UserRole.COMPANY) {
+        const profiles = manager.getRepository(CompanyProfile);
+        await profiles.save(profiles.create({ userId: user.id }));
+      }
+
+      if (user.role === UserRole.ADMIN) {
+        const profiles = manager.getRepository(AdminProfile);
+        await profiles.save(profiles.create({ userId: user.id }));
+      }
+
+      return user;
+    });
   }
 }

@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { UserRole } from './user-role.enum';
 
 @Entity({ name: 'users' })
 export class User {
@@ -24,6 +25,14 @@ export class User {
     select: false,
   })
   passwordHash: string;
+
+  @Column({
+    type: 'enum',
+    enum: UserRole,
+    enumName: 'user_role_enum',
+    default: UserRole.TRANSPORTER,
+  })
+  role: UserRole;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;

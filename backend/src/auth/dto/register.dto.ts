@@ -1,5 +1,13 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+import { PublicAccountType } from '../types/public-account-type.enum';
 
 export class RegisterDto {
   @Transform(({ value }) =>
@@ -21,4 +29,8 @@ export class RegisterDto {
   @MinLength(10)
   @MaxLength(72)
   password: string;
+
+  @IsOptional()
+  @IsEnum(PublicAccountType)
+  accountType: PublicAccountType = PublicAccountType.TRANSPORTER;
 }

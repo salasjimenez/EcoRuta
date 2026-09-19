@@ -1,6 +1,6 @@
 {
   "name": "ecoruta-api",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "API de EcoRuta",
   "scripts": {
@@ -11,7 +11,8 @@
     "typeorm": "typeorm-ts-node-commonjs -d src/database/data-source.ts",
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
-    "migration:show": "npm run typeorm -- migration:show"
+    "migration:show": "npm run typeorm -- migration:show",
+    "user:promote-admin": "ts-node src/scripts/promote-admin.ts"
   },
   "engines": {
     "node": ">=24 <27"

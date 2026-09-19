@@ -9,10 +9,12 @@ import { JwtService } from '@nestjs/jwt';
 import { compare, hash, truncates } from 'bcryptjs';
 import { QueryFailedError } from 'typeorm';
 import { User } from '../users/user.entity';
+import { UserRole } from '../users/user-role.enum';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthUser } from './types/auth-user.type';
+import { PublicAccountType } from './types/public-account-type.enum';
 import { TokenPayload } from './types/token-payload.type';
 
 @Injectable()
@@ -41,12 +43,17 @@ export class AuthService {
     }
 
     const passwordHash = await hash(dto.password, this.passwordRounds);
+    const role =
+      dto.accountType === PublicAccountType.COMPANY
+        ? UserRole.COMPANY
+        : UserRole.TRANSPORTER;
 
     try {
       const user = await this.usersService.create({
         fullName: dto.fullName.trim(),
         email,
         passwordHash,
+        role,
       });
 
       return this.createSession(user);
@@ -97,6 +104,7 @@ export class AuthService {
       id: user.id,
       fullName: user.fullName,
       email: user.email,
+      role: user.role,
       createdAt: user.createdAt,
     };
   }
