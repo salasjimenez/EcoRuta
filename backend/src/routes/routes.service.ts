@@ -6,11 +6,26 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CargoType } from '../vehicles/cargo-type.enum';
 import { Vehicle } from '../vehicles/vehicle.entity';
 import { CreatePlannedRouteDto } from './dto/create-planned-route.dto';
+import { RouteCapacityDto } from './dto/route-capacity.dto';
 import { UpdatePlannedRouteDto } from './dto/update-planned-route.dto';
+import { UpdateRouteCapacityDto } from './dto/update-route-capacity.dto';
 import { PlannedRoute } from './planned-route.entity';
 import { RouteStatus } from './route-status.enum';
+
+type CapacityValues = {
+  offeredWeightKg: number;
+  reservedWeightKg: number;
+  offeredVolumeM3: number;
+  reservedVolumeM3: number;
+  acceptedCargoTypes: CargoType[];
+  maxPackageLengthCm: number | null;
+  maxPackageWidthCm: number | null;
+  maxPackageHeightCm: number | null;
+  capacityNotes: string | null;
+};
 
 @Injectable()
 export class RoutesService {
@@ -22,7 +37,11 @@ export class RoutesService {
   ) {}
 
   async create(ownerId: string, dto: CreatePlannedRouteDto) {
-    await this.requireAvailableOwnedVehicle(ownerId, dto.vehicleId);
+    const vehicle = await this.requireAvailableOwnedVehicle(
+      ownerId,
+      dto.vehicleId,
+    );
+
     this.validateSchedule(dto.departureAt, dto.estimatedArrivalAt);
     this.validateDifferentPoints(
       dto.originLatitude,
@@ -30,6 +49,9 @@ export class RoutesService {
       dto.destinationLatitude,
       dto.destinationLongitude,
     );
+
+    const capacity = this.capacityFromCreateDto(dto.capacity);
+    this.validateCapacity(vehicle, capacity, true);
 
     const route = this.routes.create({
       ownerId,
@@ -45,6 +67,7 @@ export class RoutesService {
       departureAt: new Date(dto.departureAt),
       estimatedArrivalAt: new Date(dto.estimatedArrivalAt),
       estimatedDistanceKm: dto.estimatedDistanceKm,
+      ...capacity,
       status: RouteStatus.PLANNED,
       notes: dto.notes || null,
     });
@@ -53,29 +76,75 @@ export class RoutesService {
     return this.findOne(ownerId, saved.id);
   }
 
-  findAll(ownerId: string) {
-    return this.routes.find({
+  async findAll(ownerId: string) {
+    const routes = await this.routes.find({
       where: { ownerId },
       relations: { vehicle: true },
       order: { departureAt: 'ASC' },
     });
+
+    return routes.map((route) => this.presentRoute(route));
   }
 
   async findOne(ownerId: string, routeId: string) {
-    const route = await this.routes.findOne({
-      where: { id: routeId, ownerId },
-      relations: { vehicle: true },
-    });
+    const route = await this.findOwnedRouteEntity(ownerId, routeId);
+    return this.presentRoute(route);
+  }
 
-    if (!route) {
-      throw new NotFoundException('Ruta planificada no encontrada');
+  async getCapacity(ownerId: string, routeId: string) {
+    const route = await this.findOwnedRouteEntity(ownerId, routeId);
+    return this.presentCapacity(route);
+  }
+
+  async updateCapacity(
+    ownerId: string,
+    routeId: string,
+    dto: UpdateRouteCapacityDto,
+  ) {
+    const route = await this.findOwnedRouteEntity(ownerId, routeId);
+
+    if (route.status !== RouteStatus.PLANNED) {
+      throw new ConflictException(
+        'La capacidad solo puede modificarse mientras la ruta este planificada',
+      );
     }
 
-    return route;
+    const nextCapacity: CapacityValues = {
+      offeredWeightKg: dto.offeredWeightKg ?? route.offeredWeightKg,
+      reservedWeightKg: route.reservedWeightKg,
+      offeredVolumeM3: dto.offeredVolumeM3 ?? route.offeredVolumeM3,
+      reservedVolumeM3: route.reservedVolumeM3,
+      acceptedCargoTypes:
+        dto.acceptedCargoTypes ?? route.acceptedCargoTypes ?? [],
+      maxPackageLengthCm:
+        dto.maxPackageLengthCm ?? route.maxPackageLengthCm,
+      maxPackageWidthCm: dto.maxPackageWidthCm ?? route.maxPackageWidthCm,
+      maxPackageHeightCm:
+        dto.maxPackageHeightCm ?? route.maxPackageHeightCm,
+      capacityNotes:
+        dto.notes !== undefined
+          ? typeof dto.notes === 'string'
+            ? dto.notes.trim() || null
+            : null
+          : route.capacityNotes,
+    };
+
+    this.validateCapacity(route.vehicle, nextCapacity, false);
+
+    route.offeredWeightKg = nextCapacity.offeredWeightKg;
+    route.offeredVolumeM3 = nextCapacity.offeredVolumeM3;
+    route.acceptedCargoTypes = nextCapacity.acceptedCargoTypes;
+    route.maxPackageLengthCm = nextCapacity.maxPackageLengthCm;
+    route.maxPackageWidthCm = nextCapacity.maxPackageWidthCm;
+    route.maxPackageHeightCm = nextCapacity.maxPackageHeightCm;
+    route.capacityNotes = nextCapacity.capacityNotes;
+
+    await this.routes.save(route);
+    return this.getCapacity(ownerId, routeId);
   }
 
   async update(ownerId: string, routeId: string, dto: UpdatePlannedRouteDto) {
-    const route = await this.findOne(ownerId, routeId);
+    const route = await this.findOwnedRouteEntity(ownerId, routeId);
 
     if (dto.status !== undefined) {
       this.validateStatusTransition(route.status, dto.status);
@@ -104,7 +173,12 @@ export class RoutesService {
     }
 
     if (dto.vehicleId !== undefined && dto.vehicleId !== route.vehicleId) {
-      await this.requireAvailableOwnedVehicle(ownerId, dto.vehicleId);
+      const vehicle = await this.requireAvailableOwnedVehicle(
+        ownerId,
+        dto.vehicleId,
+      );
+      this.validateCapacity(vehicle, this.capacityFromRoute(route), false);
+      route.vehicle = vehicle;
     }
 
     const departureAt = dto.departureAt
@@ -168,7 +242,7 @@ export class RoutesService {
   }
 
   async remove(ownerId: string, routeId: string) {
-    const route = await this.findOne(ownerId, routeId);
+    const route = await this.findOwnedRouteEntity(ownerId, routeId);
 
     if (
       route.status !== RouteStatus.PLANNED &&
@@ -187,7 +261,23 @@ export class RoutesService {
     };
   }
 
-  private async requireAvailableOwnedVehicle(ownerId: string, vehicleId: string) {
+  private async findOwnedRouteEntity(ownerId: string, routeId: string) {
+    const route = await this.routes.findOne({
+      where: { id: routeId, ownerId },
+      relations: { vehicle: true },
+    });
+
+    if (!route) {
+      throw new NotFoundException('Ruta planificada no encontrada');
+    }
+
+    return route;
+  }
+
+  private async requireAvailableOwnedVehicle(
+    ownerId: string,
+    vehicleId: string,
+  ) {
     const vehicle = await this.vehicles.findOne({
       where: { id: vehicleId, ownerId },
     });
@@ -197,10 +287,178 @@ export class RoutesService {
     }
 
     if (!vehicle.isAvailable) {
-      throw new ConflictException('El vehiculo seleccionado no esta disponible');
+      throw new ConflictException(
+        'El vehiculo seleccionado no esta disponible',
+      );
     }
 
     return vehicle;
+  }
+
+  private capacityFromCreateDto(dto: RouteCapacityDto): CapacityValues {
+    return {
+      offeredWeightKg: dto.offeredWeightKg,
+      reservedWeightKg: 0,
+      offeredVolumeM3: dto.offeredVolumeM3,
+      reservedVolumeM3: 0,
+      acceptedCargoTypes: dto.acceptedCargoTypes,
+      maxPackageLengthCm: dto.maxPackageLengthCm ?? null,
+      maxPackageWidthCm: dto.maxPackageWidthCm ?? null,
+      maxPackageHeightCm: dto.maxPackageHeightCm ?? null,
+      capacityNotes: dto.notes?.trim() || null,
+    };
+  }
+
+  private capacityFromRoute(route: PlannedRoute): CapacityValues {
+    return {
+      offeredWeightKg: route.offeredWeightKg,
+      reservedWeightKg: route.reservedWeightKg,
+      offeredVolumeM3: route.offeredVolumeM3,
+      reservedVolumeM3: route.reservedVolumeM3,
+      acceptedCargoTypes: route.acceptedCargoTypes ?? [],
+      maxPackageLengthCm: route.maxPackageLengthCm,
+      maxPackageWidthCm: route.maxPackageWidthCm,
+      maxPackageHeightCm: route.maxPackageHeightCm,
+      capacityNotes: route.capacityNotes,
+    };
+  }
+
+  private validateCapacity(
+    vehicle: Vehicle,
+    capacity: CapacityValues,
+    requirePublishedCapacity: boolean,
+  ) {
+    const hasPublishedCapacity =
+      capacity.offeredWeightKg > 0 || capacity.offeredVolumeM3 > 0;
+
+    if (requirePublishedCapacity && !hasPublishedCapacity) {
+      throw new BadRequestException(
+        'La ruta debe ofrecer capacidad por peso, volumen o ambos',
+      );
+    }
+
+    if (capacity.offeredWeightKg > vehicle.maxWeightKg) {
+      throw new BadRequestException(
+        'La capacidad ofrecida en kg supera la capacidad maxima del vehiculo',
+      );
+    }
+
+    if (capacity.offeredVolumeM3 > vehicle.maxVolumeM3) {
+      throw new BadRequestException(
+        'La capacidad ofrecida en m3 supera la capacidad maxima del vehiculo',
+      );
+    }
+
+    if (capacity.reservedWeightKg > capacity.offeredWeightKg) {
+      throw new ConflictException(
+        'La capacidad ofrecida en kg no puede ser menor que la ya reservada',
+      );
+    }
+
+    if (capacity.reservedVolumeM3 > capacity.offeredVolumeM3) {
+      throw new ConflictException(
+        'La capacidad ofrecida en m3 no puede ser menor que la ya reservada',
+      );
+    }
+
+    if (hasPublishedCapacity && capacity.acceptedCargoTypes.length === 0) {
+      throw new BadRequestException(
+        'Debes indicar al menos un tipo de carga aceptado para la ruta',
+      );
+    }
+
+    const unsupportedCargoTypes = capacity.acceptedCargoTypes.filter(
+      (cargoType) => !vehicle.cargoTypes.includes(cargoType),
+    );
+
+    if (unsupportedCargoTypes.length > 0) {
+      throw new BadRequestException(
+        `El vehiculo no admite estos tipos de carga: ${unsupportedCargoTypes.join(', ')}`,
+      );
+    }
+
+    const dimensions = [
+      capacity.maxPackageLengthCm,
+      capacity.maxPackageWidthCm,
+      capacity.maxPackageHeightCm,
+    ];
+    const suppliedDimensions = dimensions.filter((value) => value !== null);
+
+    if (suppliedDimensions.length > 0 && suppliedDimensions.length < 3) {
+      throw new BadRequestException(
+        'Las dimensiones maximas deben incluir largo, ancho y alto',
+      );
+    }
+  }
+
+  private presentRoute(route: PlannedRoute) {
+    const {
+      offeredWeightKg,
+      reservedWeightKg,
+      offeredVolumeM3,
+      reservedVolumeM3,
+      acceptedCargoTypes,
+      maxPackageLengthCm,
+      maxPackageWidthCm,
+      maxPackageHeightCm,
+      capacityNotes,
+      ...routeData
+    } = route;
+
+    return {
+      ...routeData,
+      capacity: this.presentCapacityValues({
+        offeredWeightKg,
+        reservedWeightKg,
+        offeredVolumeM3,
+        reservedVolumeM3,
+        acceptedCargoTypes: acceptedCargoTypes ?? [],
+        maxPackageLengthCm,
+        maxPackageWidthCm,
+        maxPackageHeightCm,
+        capacityNotes,
+      }),
+    };
+  }
+
+  private presentCapacity(route: PlannedRoute) {
+    return {
+      routeId: route.id,
+      vehicleId: route.vehicleId,
+      status: route.status,
+      ...this.presentCapacityValues(this.capacityFromRoute(route)),
+    };
+  }
+
+  private presentCapacityValues(capacity: CapacityValues) {
+    return {
+      configured:
+        capacity.offeredWeightKg > 0 || capacity.offeredVolumeM3 > 0,
+      offeredWeightKg: capacity.offeredWeightKg,
+      reservedWeightKg: capacity.reservedWeightKg,
+      remainingWeightKg: Math.max(
+        0,
+        capacity.offeredWeightKg - capacity.reservedWeightKg,
+      ),
+      offeredVolumeM3: capacity.offeredVolumeM3,
+      reservedVolumeM3: capacity.reservedVolumeM3,
+      remainingVolumeM3: Math.max(
+        0,
+        capacity.offeredVolumeM3 - capacity.reservedVolumeM3,
+      ),
+      acceptedCargoTypes: capacity.acceptedCargoTypes,
+      maxPackageDimensionsCm:
+        capacity.maxPackageLengthCm !== null &&
+        capacity.maxPackageWidthCm !== null &&
+        capacity.maxPackageHeightCm !== null
+          ? {
+              length: capacity.maxPackageLengthCm,
+              width: capacity.maxPackageWidthCm,
+              height: capacity.maxPackageHeightCm,
+            }
+          : null,
+      notes: capacity.capacityNotes,
+    };
   }
 
   private validateSchedule(departure: string | Date, arrival: string | Date) {

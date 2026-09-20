@@ -35,26 +35,25 @@ npm run start:dev
 
 La API queda disponible en `http://localhost:3000/api`.
 
-## v6 - Rutas planificadas
+## v7 - Capacidad sobrante por ruta
 
 Los endpoints de rutas requieren un JWT válido de una cuenta `transporter`.
 
-- `POST /api/routes` publica una ruta usando un vehículo propio disponible.
-- `GET /api/routes` lista las rutas del transportista autenticado.
-- `GET /api/routes/:id` obtiene una ruta propia.
-- `PATCH /api/routes/:id` actualiza una ruta propia.
-- `DELETE /api/routes/:id` elimina una ruta planificada o cancelada.
+Una ruta nueva incluye un objeto `capacity` con:
 
-Estados disponibles:
+- `offeredWeightKg`: kg que el transportista ofrece para compartir.
+- `offeredVolumeM3`: volumen que ofrece en m3.
+- `acceptedCargoTypes`: tipos de carga admitidos en ese viaje.
+- `maxPackageLengthCm`, `maxPackageWidthCm`, `maxPackageHeightCm`: límite opcional por bulto. Si se usa, deben indicarse las tres dimensiones.
+- `notes`: restricción logística breve opcional.
 
-`planned`, `in_progress`, `completed`, `cancelled`.
+La capacidad por peso o volumen debe ser mayor que cero y nunca puede superar los límites del vehículo. Los tipos de carga de la ruta deben ser compatibles con los definidos en el vehículo.
 
-Transiciones permitidas:
+Endpoints específicos:
 
-- `planned` -> `in_progress` o `cancelled`
-- `in_progress` -> `completed` o `cancelled`
-- `completed` y `cancelled` son estados finales
+- `GET /api/routes/:id/capacity` consulta capacidad ofrecida, reservada y restante.
+- `PATCH /api/routes/:id/capacity` modifica la capacidad mientras la ruta siga en estado `planned`.
 
-Una ruta necesita origen y destino con coordenadas, una salida, una llegada estimada posterior y una distancia estimada mayor a cero. Los datos del recorrido solo pueden modificarse mientras la ruta siga en estado `planned`.
+`reservedWeightKg` y `reservedVolumeM3` no son editables por el transportista. En v7 permanecen en cero y quedan reservados para el sistema de solicitudes y matching de versiones posteriores.
 
-La v6 todavía no descuenta ni publica capacidad sobrante del vehículo; esa funcionalidad pertenece a v7.
+Las rutas creadas en v6 se conservan. Después de la migración aparecerán con capacidad cero hasta que el transportista la configure mediante `PATCH /api/routes/:id/capacity`.

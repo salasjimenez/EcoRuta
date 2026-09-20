@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { CargoType } from '../vehicles/cargo-type.enum';
 import { Vehicle } from '../vehicles/vehicle.entity';
 import { RouteStatus } from './route-status.enum';
 
@@ -62,6 +63,40 @@ export class PlannedRoute {
 
   @Column({ name: 'estimated_distance_km', type: 'double precision' })
   estimatedDistanceKm: number;
+
+  @Column({ name: 'offered_weight_kg', type: 'double precision', default: 0 })
+  offeredWeightKg: number;
+
+  @Column({ name: 'reserved_weight_kg', type: 'double precision', default: 0 })
+  reservedWeightKg: number;
+
+  @Column({ name: 'offered_volume_m3', type: 'double precision', default: 0 })
+  offeredVolumeM3: number;
+
+  @Column({ name: 'reserved_volume_m3', type: 'double precision', default: 0 })
+  reservedVolumeM3: number;
+
+  @Column({
+    name: 'accepted_cargo_types',
+    type: 'enum',
+    enum: CargoType,
+    enumName: 'cargo_type_enum',
+    array: true,
+    default: () => `ARRAY[]::"cargo_type_enum"[]`,
+  })
+  acceptedCargoTypes: CargoType[];
+
+  @Column({ name: 'max_package_length_cm', type: 'double precision', nullable: true })
+  maxPackageLengthCm: number | null;
+
+  @Column({ name: 'max_package_width_cm', type: 'double precision', nullable: true })
+  maxPackageWidthCm: number | null;
+
+  @Column({ name: 'max_package_height_cm', type: 'double precision', nullable: true })
+  maxPackageHeightCm: number | null;
+
+  @Column({ name: 'capacity_notes', type: 'varchar', length: 300, nullable: true })
+  capacityNotes: string | null;
 
   @Column({
     type: 'enum',

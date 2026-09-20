@@ -1,6 +1,7 @@
 import { Transform, Type } from 'class-transformer';
 import {
   IsDateString,
+  IsDefined,
   IsNumber,
   IsOptional,
   IsString,
@@ -9,7 +10,9 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { RouteCapacityDto } from './route-capacity.dto';
 
 export class CreatePlannedRouteDto {
   @IsUUID('4')
@@ -81,6 +84,11 @@ export class CreatePlannedRouteDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.1)
   estimatedDistanceKm: number;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => RouteCapacityDto)
+  capacity: RouteCapacityDto;
 
   @IsOptional()
   @Transform(({ value }) =>

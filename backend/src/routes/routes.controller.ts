@@ -17,6 +17,7 @@ import { AuthUser } from '../auth/types/auth-user.type';
 import { UserRole } from '../users/user-role.enum';
 import { CreatePlannedRouteDto } from './dto/create-planned-route.dto';
 import { UpdatePlannedRouteDto } from './dto/update-planned-route.dto';
+import { UpdateRouteCapacityDto } from './dto/update-route-capacity.dto';
 import { RoutesService } from './routes.service';
 
 @Controller('routes')
@@ -33,6 +34,23 @@ export class RoutesController {
   @Get()
   findAll(@CurrentUser() user: AuthUser) {
     return this.routesService.findAll(user.id);
+  }
+
+  @Get(':id/capacity')
+  getCapacity(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.routesService.getCapacity(user.id, id);
+  }
+
+  @Patch(':id/capacity')
+  updateCapacity(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: UpdateRouteCapacityDto,
+  ) {
+    return this.routesService.updateCapacity(user.id, id, dto);
   }
 
   @Get(':id')
