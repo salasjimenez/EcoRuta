@@ -4,9 +4,9 @@ EcoRuta conecta transportistas que ya tienen rutas planificadas con pequeñas em
 
 ## Estado actual
 
-**v7** permite que cada ruta publique capacidad sobrante real por peso y volumen, indique los tipos de carga aceptados y, si hace falta, limite las dimensiones máximas de cada bulto.
+**v8** permite que las empresas publiquen solicitudes de transporte con origen, destino, tipo de carga, peso, volumen, dimensiones y ventanas horarias de recojo y entrega.
 
-La capacidad ofrecida nunca puede superar la capacidad del vehículo. EcoRuta guarda por separado la capacidad ofrecida y la reservada, dejando preparado el modelo para el matching y las reservas de versiones posteriores.
+Cada empresa administra únicamente sus propias solicitudes. Las solicitudes quedan en estado `open` hasta ser canceladas; el matching automático con rutas disponibles se incorpora en v9.
 
 ## Configuración
 

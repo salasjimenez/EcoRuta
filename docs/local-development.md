@@ -57,3 +57,19 @@ Endpoints específicos:
 `reservedWeightKg` y `reservedVolumeM3` no son editables por el transportista. En v7 permanecen en cero y quedan reservados para el sistema de solicitudes y matching de versiones posteriores.
 
 Las rutas creadas en v6 se conservan. Después de la migración aparecerán con capacidad cero hasta que el transportista la configure mediante `PATCH /api/routes/:id/capacity`.
+
+## v8 - Solicitudes de transporte
+
+Los endpoints de solicitudes requieren un JWT válido de una cuenta `company`.
+
+Una solicitud contiene origen y destino con coordenadas, ventanas de recojo y entrega, tipo de carga, peso, volumen, descripción y dimensiones opcionales por bulto. Si se informan dimensiones, deben indicarse largo, ancho y alto.
+
+Endpoints:
+
+- `POST /api/shipping-requests` publica una solicitud.
+- `GET /api/shipping-requests` lista las solicitudes de la empresa autenticada.
+- `GET /api/shipping-requests/:id` consulta una solicitud propia.
+- `PATCH /api/shipping-requests/:id` actualiza o cancela una solicitud abierta.
+- `DELETE /api/shipping-requests/:id` elimina una solicitud propia.
+
+Estados disponibles en v8: `open` y `cancelled`. El matching automático con rutas se añade en v9.
