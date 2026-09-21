@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { validateEnvironment } from './configuration';
 import { buildDatabaseOptions } from './database/database.config';
 import { HealthModule } from './health/health.module';
+import { MatchingModule } from './matching/matching.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { RoutesModule } from './routes/routes.module';
 import { ShippingRequestsModule } from './shipping-requests/shipping-requests.module';
@@ -27,6 +28,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     VehiclesModule,
     RoutesModule,
     ShippingRequestsModule,
+    MatchingModule,
   ],
 })
 export class AppModule {}

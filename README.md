@@ -4,9 +4,9 @@ EcoRuta conecta transportistas que ya tienen rutas planificadas con pequeñas em
 
 ## Estado actual
 
-**v8** permite que las empresas publiquen solicitudes de transporte con origen, destino, tipo de carga, peso, volumen, dimensiones y ventanas horarias de recojo y entrega.
+**v9** incorpora el primer motor de matching entre solicitudes abiertas y rutas planificadas. Compara origen, destino, ventanas horarias, capacidad disponible y tipo de carga, y devuelve únicamente coincidencias compatibles ordenadas por un puntaje básico.
 
-Cada empresa administra únicamente sus propias solicitudes. Las solicitudes quedan en estado `open` hasta ser canceladas; el matching automático con rutas disponibles se incorpora en v9.
+El matching de v9 es de consulta: todavía no reserva espacio ni modifica las rutas. La optimización por desvío, dimensiones y restricciones logísticas más avanzadas se incorpora en v10.
 
 ## Configuración
 

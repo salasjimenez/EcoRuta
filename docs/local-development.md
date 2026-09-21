@@ -73,3 +73,26 @@ Endpoints:
 - `DELETE /api/shipping-requests/:id` elimina una solicitud propia.
 
 Estados disponibles en v8: `open` y `cancelled`. El matching automático con rutas se añade en v9.
+
+## v9 - Matching básico
+
+v9 calcula coincidencias bajo demanda y no crea nuevas tablas. No hay una migración adicional en esta versión.
+
+Criterios obligatorios del motor `basic-v1`:
+
+- misma ciudad de origen;
+- misma ciudad de destino;
+- salida de la ruta dentro de la ventana de recojo;
+- llegada estimada dentro de la ventana de entrega;
+- peso disponible suficiente;
+- volumen disponible suficiente;
+- tipo de carga aceptado por la ruta.
+
+El puntaje de 0 a 100 se usa para ordenar coincidencias compatibles. Considera el aprovechamiento del espacio disponible y qué tan cerca están salida y llegada del centro de las ventanas horarias. No representa una reserva ni una garantía de aceptación.
+
+Endpoints:
+
+- `GET /api/matching/requests/:requestId/routes`: una empresa consulta rutas compatibles para una solicitud propia y abierta.
+- `GET /api/matching/routes/:routeId/requests`: un transportista consulta solicitudes abiertas compatibles con una ruta propia y planificada.
+
+v10 ampliará el motor con desvíos, dimensiones de bulto y restricciones logísticas adicionales.
